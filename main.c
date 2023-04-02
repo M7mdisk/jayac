@@ -3,12 +3,30 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define POPULATION_SIZE 10
+#define DEBUG 0
+
+#define POPULATION_SIZE 100
 
 double sphere(double x[], int d) {
   double res = 0;
   for (int i = 0; i < d; i++) {
     res += pow(x[i], 2);
+  }
+  return res;
+}
+
+double rosenbrock(double x[], int d) {
+  double res = 0;
+  for (int i = 0; i < d - 1; i++) {
+    res += 100 * pow(x[i + 1] - pow(x[i], 2), 2) + pow(1 - x[i], 2);
+  }
+  return res;
+}
+
+double rastrigin(double x[], int d) {
+  double res = 0;
+  for (int i = 0; i < d; i++) {
+    res += pow(x[i], 2) - 10 * cos(2 * M_PI * x[i]) + 10;
   }
   return res;
 }
@@ -41,7 +59,7 @@ void print_matrix(double *mat, int n, int m) {
 
 /*
  * Given a function f and the number of dimensions d.
- * return the optimal solution found x such that -b < x_i < b
+ * return the optimal solution found x such that -b < x_i < b initially.
  */
 double *jaya(double (*f)(double x[], int d), int d, double b, int n) {
   int p = POPULATION_SIZE;
@@ -73,8 +91,10 @@ double *jaya(double (*f)(double x[], int d), int d, double b, int n) {
     }
 
     // update the solutions
-    printf("Before:------------------------\n");
-    print_matrix(solutions, p, d);
+    if (DEBUG) {
+      printf("Before:------------------------\n");
+      print_matrix(solutions, p, d);
+    }
     // xi' = xi + r1 * (best-xi) - r2 * (worst -xi)
     for (int i = 0; i < p; i++) {
       double *r1 = rand_matrix(1, d, 0, 1);
@@ -93,12 +113,13 @@ double *jaya(double (*f)(double x[], int d), int d, double b, int n) {
         for (int j = 0; j < d; j++) solutions[i * d + j] = xi[j];
       }
     }
-    printf("After:------------------------\n");
-    print_matrix(solutions, p, d);
-    printf("--------------------- %f -----------------\n", min_fit);
+    if (DEBUG) {
+      printf("After:------------------------\n");
+      print_matrix(solutions, p, d);
+    }
   }
 
-  print_matrix(solutions, p, d);
+  if (DEBUG) print_matrix(solutions, p, d);
   double min_fit = INFINITY;
   for (int i = 0; i < p; i++) {
     // double *ptr = &solutions[i * d];
@@ -115,16 +136,17 @@ double *jaya(double (*f)(double x[], int d), int d, double b, int n) {
   return best_sol;
 }
 
+// TODO: Add max function evaluations
 int main() {
-  int n = 10, d = 2;
-  double *sol = jaya(sphere, d, 30, n);
+  int n = 1000, d = 2;
+  double *sol = jaya(rosenbrock, d, 30, n);
 
   printf("Best solution is: \n");
   for (int i = 0; i < d; i++) {
     printf("%f ", sol[i]);
   }
   puts("");
-  printf("The fit is %f\n", sphere(sol, d));
+  printf("The fit is %f\n", rosenbrock(sol, d));
 
   return 0;
 }

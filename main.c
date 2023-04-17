@@ -73,25 +73,26 @@ double *jaya(double (*f)(double x[], int d), int d, double b, int n, int p) {
   double *solutions = malloc((p * d) * sizeof(double));
   rand_matrix(solutions, p, d, -b, b);
 
-  for (int iter = 0; iter < n; iter++) {
+  min_fit = INFINITY;
+  max_fit = 0;
+  for (int i = 0; i < p; i++) {
+    fit = f(&(solutions[i * d]), d);
+    all_fits[i] = fit;
+
+    if (fit > max_fit) {
+      max_fit = fit;
+      worst_sol = &(solutions[i * d]);
+    }
+
+    if (fit < min_fit) {
+      min_fit = fit;
+      best_sol = &(solutions[i * d]);
+    }
+  }
+  for (int iter = 0; iter < n - 1; iter++) {
     min_fit = INFINITY;
     max_fit = 0;
-
     // for each solution, find fit and the best/worst
-    for (int i = 0; i < p; i++) {
-      fit = f(&(solutions[i * d]), d);
-      all_fits[i] = fit;
-
-      if (fit > max_fit) {
-        max_fit = fit;
-        worst_sol = &(solutions[i * d]);
-      }
-
-      if (fit < min_fit) {
-        min_fit = fit;
-        best_sol = &(solutions[i * d]);
-      }
-    }
     // printf("Min fit: %f %i\n", min_fit, iter);
 
     // update the solutions
@@ -100,6 +101,7 @@ double *jaya(double (*f)(double x[], int d), int d, double b, int n, int p) {
       print_matrix(solutions, p, d);
     }
     // xi' = xi + r1 * (best-xi) - r2 * (worst -xi)
+    // p
     for (int i = 0; i < p; i++) {
       rand_matrix(r1, 1, d, 0, 1);
       rand_matrix(r2, 1, d, 0, 1);
@@ -113,6 +115,14 @@ double *jaya(double (*f)(double x[], int d), int d, double b, int n, int p) {
       new_fit = f(xi, d);
       // If new one is better, use it instead
       if (new_fit < old_fit) {
+        if (new_fit < min_fit) {
+          min_fit = new_fit;
+          best_sol = &(solutions[i * d]);
+        }
+        if (new_fit > max_fit) {
+          max_fit = new_fit;
+          worst_sol = &(solutions[i * d]);
+        }
         all_fits[i] = new_fit;
         for (int j = 0; j < d; j++) solutions[i * d + j] = xi[j];
       }
@@ -128,10 +138,9 @@ double *jaya(double (*f)(double x[], int d), int d, double b, int n, int p) {
   for (int i = 0; i < p; i++) {
     // double *ptr = &solutions[i * d];
     // printf("Fit of %f, %f is %f\n", *ptr, *(ptr + 1), fit);
-    double fit = all_fits[i];
 
-    if (fit < min_fit) {
-      min_fit = fit;
+    if (all_fits[i] < min_fit) {
+      min_fit = all_fits[i];
       best_sol = &(solutions[i * d]);
     }
   }
@@ -167,22 +176,26 @@ int main(int argc, char **argv) {
   // double *sol = jaya(sphere, d, 30, n);
   double *sol;
 
+  double (*func_ptr)(double x[], int d);
+
   if (strcmp(func, "sphere") == 0) {
-    sol = jaya(sphere, d, 30, n, p);
+    func_ptr = sphere;
   } else if (strcmp(func, "rosenbrock") == 0) {
-    sol = jaya(rosenbrock, d, 30, n, p);
+    func_ptr = rosenbrock;
   } else if (strcmp(func, "rastrigin") == 0) {
-    sol = jaya(rastrigin, d, 30, n, p);
+    func_ptr = rastrigin;
   } else {
     fprintf(stderr, "Invalid function\n");
+    exit(1);
   }
+  sol = jaya(func_ptr, d, 30, n, p);
 
   printf("Best solution is: \n");
   for (int i = 0; i < d; i++) {
     printf("%f ", sol[i]);
   }
   puts("");
-  printf("The fit is %f\n", sphere(sol, d));
+  printf("The fit is %f\n", func_ptr(sol, d));
 
   return 0;
 }

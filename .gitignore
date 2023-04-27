@@ -1,3 +1,5 @@
 jaya
 .vscode
 fitness_progression.txt
+*.o
+*.out

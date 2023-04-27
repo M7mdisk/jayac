@@ -67,28 +67,28 @@ double *jaya(double (*f)(double x[], int d), int d, double b, int n, int p) {
   double min_fit = INFINITY;
   double max_fit = 0;
   double fit, x, new_fit, old_fit;
-
-  srand(time(0));
+  int min_idx, max_idx;
 
   double *solutions = malloc((p * d) * sizeof(double));
   rand_matrix(solutions, p, d, -b, b);
 
-  min_fit = INFINITY;
-  max_fit = 0;
   for (int i = 0; i < p; i++) {
     fit = f(&(solutions[i * d]), d);
     all_fits[i] = fit;
 
     if (fit > max_fit) {
       max_fit = fit;
+      max_idx = i;
       worst_sol = &(solutions[i * d]);
     }
 
     if (fit < min_fit) {
       min_fit = fit;
+      min_idx = i;
       best_sol = &(solutions[i * d]);
     }
   }
+
   for (int iter = 0; iter < n - 1; iter++) {
     min_fit = INFINITY;
     max_fit = 0;
@@ -117,15 +117,17 @@ double *jaya(double (*f)(double x[], int d), int d, double b, int n, int p) {
       if (new_fit < old_fit) {
         if (new_fit < min_fit) {
           min_fit = new_fit;
-          best_sol = &(solutions[i * d]);
+          min_idx = i;
         }
         if (new_fit > max_fit) {
           max_fit = new_fit;
-          worst_sol = &(solutions[i * d]);
+          max_idx = i;
         }
         all_fits[i] = new_fit;
         for (int j = 0; j < d; j++) solutions[i * d + j] = xi[j];
       }
+      best_sol = &(solutions[min_idx * d]);
+      worst_sol = &(solutions[max_idx * d]);
     }
     if (DEBUG) {
       printf("After:------------------------\n");
@@ -157,6 +159,8 @@ int main(int argc, char **argv) {
   // scanf("%d", &d);
   // printf("Function to use: Options: 'sphere', 'rosenbrock', 'rastrigin'\n");
   // scanf("%s", func);
+
+  srand(time(0));
 
   if (argc != 5) {
     puts("Please enter 4 arguments to this program");

@@ -12,11 +12,17 @@ do
             do
                 echo pop_size=$pop_size dimension=$dimension maxFE=$maxFE method=$method
 
-                output=$(/usr/bin/time -f "time: %e" ./jaya $pop_size $dimension $maxFE $method 2>&1)
+                if [ -n "$1" ] && [ $1 = 'multi' ]
+                then
+                    output=$(/usr/bin/time -f "time: %e" ./jaya_multi $pop_size $dimension $maxFE $method 5 2>&1)
+                else
+                    output=$(/usr/bin/time -f "time: %e" ./jaya $pop_size $dimension $maxFE $method 2>&1)
+                fi
 
                 # Extract the time taken from the output and add it to the total
                 time_taken=$(echo $output | grep -oP 'time: \K[0-9.]+')
                 total_time=$(echo "$total_time + $time_taken" | bc)
+                # echo $output 
                 echo $output | grep -oP 'The fit is .*'
             done
         done

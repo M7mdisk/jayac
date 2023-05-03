@@ -75,7 +75,6 @@ void *jaya_sub() {
       worst_sol = &(solutions[i * d]);
     }
   }
-  update_global_solutions(min_fit, best_sol, max_fit, worst_sol);
 
   for (iter = 0; iter < n - 1; iter++) {
     max_fit = 0;
@@ -114,9 +113,8 @@ void *jaya_sub() {
     // assert(f(best_sol) == min_fit);
     // assert(f(worst_sol) == max_fit);
 #endif
-
-    update_global_solutions(min_fit, best_sol, max_fit, worst_sol);
   }
+  update_global_solutions(min_fit, best_sol, max_fit, worst_sol);
   pthread_exit(NULL);
 }
 

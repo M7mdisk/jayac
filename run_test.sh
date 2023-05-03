@@ -14,7 +14,7 @@ do
 
                 if [ -n "$1" ] && [ $1 = 'multi' ]
                 then
-                    output=$(/usr/bin/time -f "time: %e" ./jaya_multi $pop_size $dimension $maxFE $method 5 2>&1)
+                    output=$(/usr/bin/time -f "time: %e" ./jaya_multi $pop_size $dimension $maxFE $method $2 2>&1)
                 else
                     output=$(/usr/bin/time -f "time: %e" ./jaya $pop_size $dimension $maxFE $method 2>&1)
                 fi

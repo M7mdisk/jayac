@@ -124,12 +124,17 @@ double *jaya() {
   int sub_pop_unit = p / k;
   int merge_times = k - 1;
   int merged = 0;
+
   int iter_per_merge = n / merge_times;
 
-  while (merged < k) {
-    pthread_t *threads = malloc(sizeof(pthread_t) * k);
-    params *pars = malloc(sizeof(params) * k);
+  pthread_t *threads = malloc(sizeof(pthread_t) * k);
+  params *pars = malloc(sizeof(params) * k);
 
+  while (merged < k) {
+    // iterations per thread will depend on iter_per_merge divided over the current number of current
+    // sub populations.
+    // to caluclate the current subpopulation count we do k (starting count) - merged (the number of sub that have been merged
+    // or rather 'eaten')
     int iter_per_thread = iter_per_merge / (k - merged);
 
     pars[0].start = 0;
@@ -141,8 +146,8 @@ double *jaya() {
 
 
     for (int i = 1; i < k - merged; i++) {
-      pars[i].start = i * sub_pop_unit + (merged * sub_pop_unit);
-      pars[i].end = i * sub_pop_unit + (merged * sub_pop_unit) + sub_pop_unit;
+      pars[i].start = pars[i - 1].end;
+      pars[i].end = pars[i].start + sub_pop_unit;
       pars[i].iters = iter_per_thread;
 
       pthread_create(threads + i, NULL, jaya_sub, pars + i);
@@ -186,17 +191,16 @@ int main(int argc, char **argv) {
   all_fits = malloc(sizeof(double) * p);
   rand_matrix(solutions, p, d, -b, b);
 
-  f = sphere;
-  // if (strcmp(func, "sphere") == 0) {
-  //   f = sphere;
-  // } else if (strcmp(func, "rosenbrock") == 0) {
-  //   f = rosenbrock;
-  // } else if (strcmp(func, "rastrigin") == 0) {
-  //   f = rastrigin;
-  // } else {
-  //   fprintf(stderr, "Invalid function\n");
-  //   exit(1);
-  // }
+  if (strcmp(func, "sphere") == 0) {
+    f = sphere;
+  } else if (strcmp(func, "rosenbrock") == 0) {
+    f = rosenbrock;
+  } else if (strcmp(func, "rastrigin") == 0) {
+    f = rastrigin;
+  } else {
+    fprintf(stderr, "Invalid function\n");
+    exit(1);
+  }
 
   jaya();
   printf("The fit is %f\n", f(global_best_sol));

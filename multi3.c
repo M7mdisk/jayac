@@ -150,6 +150,10 @@ double *jaya() {
       pars[i].end = pars[i].start + sub_pop_unit;
       pars[i].iters = iter_per_thread;
 
+      // this is to get the last element incase the population and thread count are not divisible
+      // this solves the problem of missing the last elements due to rounding
+      if (i == k - merged - 1) pars[i].end = p;
+
       pthread_create(threads + i, NULL, jaya_sub, pars + i);
     }
 

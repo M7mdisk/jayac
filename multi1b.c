@@ -16,15 +16,32 @@
 int p, d, maxfe, n, b, k, subsize;
 double (*f)(double x[]);
 
-double *global_best_sol;
-double global_best_fit = INFINITY;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-// Struct for result from thread
-typedef struct solution_t {
-  double fit;
-  double *sol;
+// Shared vars, lock plz
+double *global_best_sol, *global_worst_sol;
+double global_min_fit = INFINITY;
+double global_max_fit = 0;
 
-} solution;
+void update_global_solutions(double min_fit, double *min_sol, double max_fit,
+                             double *max_sol) {
+  pthread_mutex_lock(&mutex);
+  if (min_fit < global_min_fit) {
+    global_min_fit = min_fit;
+    global_best_sol = min_sol;
+  } else {
+    min_sol = global_best_sol;
+  }
+  pthread_mutex_unlock(&mutex);
+  pthread_mutex_lock(&mutex);
+  if (max_fit > global_max_fit) {
+    global_max_fit = max_fit;
+    global_worst_sol = max_sol;
+  } else {
+    max_sol = global_worst_sol;
+  }
+  pthread_mutex_unlock(&mutex);
+}
 
 void *jaya_sub() {
   int p = subsize;
@@ -82,7 +99,8 @@ void *jaya_sub() {
           min_idx = i;
         }
         all_fits[i] = new_fit;
-        for (j = 0; j < d; j++) solutions[i * d + j] = xi[j];
+        for (j = 0; j < d; j++)
+          solutions[i * d + j] = xi[j];
       }
       if (all_fits[i] > max_fit) {
         max_fit = all_fits[i];
@@ -96,15 +114,11 @@ void *jaya_sub() {
     // assert(f(worst_sol) == max_fit);
 #endif
   }
-
-  solution *final_sol = malloc(sizeof(solution));
-  final_sol->fit = min_fit;
-  final_sol->sol = best_sol;
-
-  pthread_exit(final_sol);
+  update_global_solutions(min_fit, best_sol, max_fit, worst_sol);
+  pthread_exit(NULL);
 }
 
-void jaya() {
+double *jaya() {
   subsize = p / k;
 
   pthread_t *threads = malloc(sizeof(pthread_t) * k);
@@ -113,17 +127,10 @@ void jaya() {
     pthread_create(&threads[i], NULL, jaya_sub, NULL);
   }
 
-  solution **results = malloc(k * sizeof(solution));
+  for (int i = 0; i < k; i++)
+    pthread_join(threads[i], NULL);
 
-  for (int i = 0; i < k; i++) pthread_join(threads[i], &results[i]);
-
-  // get the best sol out of the threads
-  for (int i = 0; i < k; i++) {
-    if (results[i]->fit < global_best_fit) {
-      global_best_fit = results[i]->fit;
-      global_best_sol = results[i]->sol;
-    }
-  }
+  return global_best_sol;
 }
 
 int main(int argc, char **argv) {
@@ -158,14 +165,14 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  jaya();
+  double *sol = jaya();
 
   printf("Best solution is: \n");
   for (int i = 0; i < d; i++) {
-    printf("%f ", global_best_sol[i]);
+    printf("%f ", sol[i]);
   }
   puts("");
-  printf("The fit is %f\n", global_best_fit);
+  printf("The fit is %f\n", global_min_fit);
 
   return 0;
 }
